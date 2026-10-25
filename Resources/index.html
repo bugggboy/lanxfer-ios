@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>局域网传输</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --line:#262b35; --fg:#e6e9ef;
+    --dim:#8b94a3; --accent:#4c8dff; --ok:#3ecf8e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:16px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+       padding:16px 14px 40px;max-width:720px;margin:0 auto}
+  h1{font-size:17px;margin:0 0 4px;font-weight:600}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        overflow:hidden;margin-bottom:14px}
+  .row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+       border-bottom:1px solid var(--line);cursor:pointer}
+  .row:last-child{border-bottom:none}
+  .row:active{background:#1e222b}
+  .row .ico{width:26px;text-align:center;font-size:18px}
+  .row .main{flex:1;min-width:0}
+  .row .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .meta{color:var(--dim);font-size:12px;margin-top:2px}
+  .row .go{color:var(--dim);font-size:13px}
+  .badge{font-size:11px;color:#0f1115;background:var(--ok);border-radius:6px;
+         padding:1px 6px;margin-left:6px;font-weight:600}
+  .badge.self{background:var(--accent)}
+  .empty{color:var(--dim);font-size:14px;padding:16px;text-align:center}
+  .bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .path{flex:1;font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;
+        white-space:nowrap;direction:rtl;text-align:left}
+  button{border:none;border-radius:10px;padding:9px 14px;font-size:14px;
+         background:var(--accent);color:#fff;font-weight:600}
+  button.ghost{background:#232936;color:var(--fg);font-weight:500}
+  .up{display:flex;gap:8px;padding:12px 16px}
+  input[type=text]{flex:1;background:#0f1115;border:1px solid var(--line);border-radius:10px;
+                   padding:10px 12px;color:var(--fg);font-size:14px;min-width:0}
+  .hidden{display:none}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
+         background:#232936;color:#fff;padding:10px 16px;border-radius:10px;
+         font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<h1>局域网传输</h1>
+<div class="sub" id="self">正在读取本机信息…</div>
+
+<!-- 设备列表 -->
+<div id="viewDevices">
+  <div class="card" id="peerList">
+    <div class="empty">正在搜索同一局域网内的设备…</div>
+  </div>
+  <div class="card">
+    <div class="bar"><div class="path">mDNS 搜不到？手动添加对方 IP</div></div>
+    <div class="up">
+      <input type="text" id="manual" placeholder="192.168.31.101 或 ip:8765">
+      <button class="ghost" onclick="addManual()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- 文件浏览 -->
+<div id="viewFiles" class="hidden">
+  <div class="card">
+    <div class="bar">
+      <button class="ghost" onclick="backToDevices()">‹ 设备</button>
+      <div class="path" id="curPath">/</div>
+      <button class="ghost" onclick="goUp()">上一级</button>
+    </div>
+    <div id="fileList"><div class="empty">加载中…</div></div>
+    <div class="up">
+      <input type="file" id="fileInput" multiple style="display:none" onchange="upload(this)">
+      <button onclick="document.getElementById('fileInput').click()">上传到这里</button>
+      <button class="ghost" onclick="refresh()">刷新</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let peer = null;          // 当前浏览的设备；null 表示本机
+let path = '/sdcard';
+
+const $ = id => document.getElementById(id);
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
+function base(){ return peer ? `http://${peer.host}:${peer.port}` : ''; }
+function fmt(n){ if(!n) return ''; const u=['B','KB','MB','GB']; let i=0;
+  while(n>=1024 && i<u.length-1){n/=1024;i++;} return n.toFixed(n<10&&i>0?1:0)+' '+u[i]; }
+function esc(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function loadSelf(){
+  try{
+    const r = await fetch('/api/info'); const j = await r.json();
+    $('self').innerHTML = `本机：<b style="color:#e6e9ef">${esc(j.model)}</b> · ${esc(j.ver)} · 端口 ${j.port}`;
+  }catch(e){ $('self').textContent = '本机信息读取失败'; }
+}
+
+async function pollPeers(){
+  if(!$('viewDevices').classList.contains('hidden')){
+    try{
+      const r = await fetch('/api/peers'); const list = await r.json();
+      renderPeers(list);
+    }catch(e){}
+  }
+  setTimeout(pollPeers, 2000);
+}
+
+function renderPeers(list){
+  const box = $('peerList');
+  if(!list.length){ box.innerHTML = '<div class="empty">正在搜索同一局域网内的设备…<br>（对方也要打开本工具）</div>'; return; }
+  box.innerHTML = list.map(p=>`
+    <div class="row" onclick='openPeer(${JSON.stringify(p)})'>
+      <div class="ico">${p.os==='ios' ? '📱' : '🤖'}</div>
+      <div class="main">
+        <div class="nm">${esc(p.name||p.host)}</div>
+        <div class="meta">${esc(p.host)}:${p.port}${p.os?' · '+esc(p.os):''}</div>
+      </div>
+      <div class="go">浏览 ›</div>
+    </div>`).join('');
+}
+
+function addManual(){
+  const h = $('manual').value.trim();
+  if(!h) return;
+  fetch('/api/addpeer?host='+encodeURIComponent(h)).then(()=>{ $('manual').value=''; toast('已添加'); });
+}
+
+function openPeer(p){ peer = p; path = '/sdcard'; $('viewDevices').classList.add('hidden');
+  $('viewFiles').classList.remove('hidden'); refresh(); }
+function backToDevices(){ peer=null; $('viewFiles').classList.add('hidden');
+  $('viewDevices').classList.remove('hidden'); }
+function goUp(){ if(path==='/') return; path = path.replace(/\/[^\/]+\/?$/,'') || '/'; refresh(); }
+
+async function refresh(){
+  $('curPath').textContent = path;
+  $('fileList').innerHTML = '<div class="empty">加载中…</div>';
+  try{
+    const r = await fetch(`${base()}/api/ls?path=${encodeURIComponent(path)}`);
+    const j = await r.json();
+    if(j.error){ $('fileList').innerHTML = `<div class="empty">打不开：${esc(j.error)}</div>`; return; }
+    path = j.path;
+    $('curPath').textContent = path;
+    if(!j.entries.length){ $('fileList').innerHTML = '<div class="empty">空目录</div>'; return; }
+    $('fileList').innerHTML = j.entries.map(e=>`
+      <div class="row" onclick="tapEntry('${esc(e.n).replace(/'/g,"\\'")}',${e.d})">
+        <div class="ico">${e.d?'📁':'📄'}</div>
+        <div class="main"><div class="nm">${esc(e.n)}</div>
+          <div class="meta">${e.d?'文件夹':fmt(e.s)}</div></div>
+        <div class="go">${e.d?'›':'下载'}</div>
+      </div>`).join('');
+  }catch(e){
+    $('fileList').innerHTML = '<div class="empty">连接失败，对方可能已关闭工具</div>';
+  }
+}
+
+function tapEntry(name, isDir){
+  const full = (path.endsWith('/') ? path : path + '/') + name;
+  if(isDir){ path = full; refresh(); return; }
+  // 下载：交给系统下载器（WebView 侧已注册 DownloadListener）
+  window.location.href = `${base()}/api/get?path=${encodeURIComponent(full)}`;
+  toast('开始下载 ' + name);
+}
+
+async function upload(input){
+  const files = [...input.files];
+  input.value = '';
+  for(const f of files){
+    const dst = (path.endsWith('/') ? path : path + '/') + f.name;
+    toast(`上传 ${f.name}…`);
+    try{
+      const r = await fetch(`${base()}/api/put?path=${encodeURIComponent(dst)}`,
+                            {method:'PUT', body:f});
+      const j = await r.json();
+      toast(j.ok ? `已上传 ${f.name} (${fmt(j.size)})` : `上传失败 ${f.name}`);
+    }catch(e){ toast('上传失败：' + e); }
+  }
+  refresh();
+}
+
+loadSelf(); pollPeers();
+</script>
+</body>
+</html>

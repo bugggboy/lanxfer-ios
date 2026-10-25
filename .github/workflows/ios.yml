@@ -1,0 +1,70 @@
+name: iOS · 构建未签名 ipa
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        run: |
+          xcodegen generate
+          ls -la
+          xcodebuild -list -project lanxfer.xcodeproj
+
+      - name: 编译（未签名）
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project lanxfer.xcodeproj \
+            -scheme lanxfer \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tail -60
+
+      - name: 打包 ipa
+        run: |
+          set -e
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "APP=$APP"
+          [ -n "$APP" ] || { echo "::error::没有产出 .app"; exit 1; }
+          rm -rf Payload && mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qr lanxfer-unsigned.ipa Payload
+          ls -lh lanxfer-unsigned.ipa
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" Payload/*.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" Payload/*.app/Info.plist || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lanxfer-ipa
+          path: lanxfer-unsigned.ipa
+          retention-days: 30
+
+      - name: 挂到 Release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f lanxfer-unsigned.ipa ] || exit 0
+          TAG=ios-preview
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "lanxfer for iOS (unsigned)" \
+                 --notes "局域网互传 iOS 端。未签名，用 TrollStore 安装。与 Android 端协议一致（_lanxfer._tcp / 8765）。" \
+                 --latest=false
+          gh release upload "$TAG" lanxfer-unsigned.ipa --clobber
