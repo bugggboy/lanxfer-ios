@@ -1,0 +1,45 @@
+name: lanxfer
+options:
+  bundleIdPrefix: com.bugggboy
+  deploymentTarget:
+    iOS: "14.0"
+  createIntermediateGroups: true
+
+targets:
+  lanxfer:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bugggboy.lanxfer
+        PRODUCT_NAME: lanxfer
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        GENERATE_INFOPLIST_FILE: "NO"
+        ENABLE_BITCODE: "NO"
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: 局域网传输
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocalNetworkUsageDescription: 需要访问本地网络，以发现同一局域网内的设备并传输文件。
+        NSBonjourServices:
+          - _lanxfer._tcp
+          - _lanxfer._tcp.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
