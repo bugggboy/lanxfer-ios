@@ -10,9 +10,16 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-14
+    # 必须用 Xcode 16 的镜像：XcodeGen 2.46 产出的项目格式是 objectVersion 77，
+    # macos-14 自带的 Xcode 15.4 读不了（报 "future Xcode project file format (77)"）
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      - name: 环境信息
+        run: |
+          xcodebuild -version
+          sw_vers
 
       - name: 安装 XcodeGen
         run: brew install xcodegen
