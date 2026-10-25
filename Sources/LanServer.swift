@@ -110,19 +110,19 @@ final class LanServer {
 
         case "/api/info":
             let ip = Discovery.localIP() ?? ""
-            let json = "{\"model\":\"\(esc(LanServer.model()))\",\"os\":\"ios\",\"ver\":\"\(esc(LanServer.osVersion()))\",\"port\":\(LanServer.port),\"ip\":\"\(esc(ip))\"}"
+            let json = "{\"model\":\"\(LanServer.esc(LanServer.model()))\",\"os\":\"ios\",\"ver\":\"\(LanServer.esc(LanServer.osVersion()))\",\"port\":\(LanServer.port),\"ip\":\"\(LanServer.esc(ip))\"}"
             respond(conn, "200 OK", "application/json; charset=utf-8", Data(json.utf8))
 
         case "/api/peers":
-            respond(conn, "200 OK", "application/json; charset=utf-8", Data(Discovery.peersJson().utf8))
+            respond(conn, "200 OK", "application/json; charset=utf-8", Data(Discovery.shared.peersJson().utf8))
 
         case "/api/roots":
             let r = LanServer.root()
             respond(conn, "200 OK", "application/json; charset=utf-8",
-                    Data("[\"\(esc(r))\",\"\(esc(LanServer.downloadDir()))\"]".utf8))
+                    Data("[\"\(LanServer.esc(r))\",\"\(LanServer.esc(LanServer.downloadDir()))\"]".utf8))
 
         case "/api/addpeer":
-            Discovery.addManual(req.query["host"])
+            Discovery.shared.addManual(req.query["host"])
             respond(conn, "200 OK", "application/json; charset=utf-8", Data("{\"ok\":true}".utf8))
 
         case "/api/ls":
@@ -148,7 +148,7 @@ final class LanServer {
         let dir = raw?.isEmpty == false ? raw! : LanServer.root()
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: dir, isDirectory: &isDir), isDir.boolValue else {
-            return "{\"error\":\"not a directory\",\"path\":\"\(esc(dir))\",\"entries\":[]}"
+            return "{\"error\":\"not a directory\",\"path\":\"\(LanServer.esc(dir))\",\"entries\":[]}"
         }
         let items = (try? FileManager.default.contentsOfDirectory(atPath: dir)) ?? []
         var entries: [(String, Bool, UInt64)] = []
@@ -160,8 +160,8 @@ final class LanServer {
             entries.append((name, d.boolValue, size))
         }
         entries.sort { a, b in a.1 == b.1 ? a.0.lowercased() < b.0.lowercased() : a.1 }
-        let body = entries.map { "{\"n\":\"\(esc($0.0))\",\"d\":\($0.1),\"s\":\($0.2)}" }.joined(separator: ",")
-        return "{\"path\":\"\(esc(dir))\",\"entries\":[\(body)]}"
+        let body = entries.map { "{\"n\":\"\(LanServer.esc($0.0))\",\"d\":\($0.1),\"s\":\($0.2)}" }.joined(separator: ",")
+        return "{\"path\":\"\(LanServer.esc(dir))\",\"entries\":[\(body)]}"
     }
 
     private func saveFile(path: String, data: Data) -> Bool {
