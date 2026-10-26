@@ -110,8 +110,15 @@ final class LanServer {
 
         case "/api/info":
             let ip = Discovery.localIP() ?? ""
-            let json = "{\"model\":\"\(LanServer.esc(LanServer.model()))\",\"os\":\"ios\",\"ver\":\"\(LanServer.esc(LanServer.osVersion()))\",\"port\":\(LanServer.port),\"ip\":\"\(LanServer.esc(ip))\"}"
+            let json = "{\"model\":\"\(LanServer.esc(LanServer.model()))\",\"os\":\"ios\",\"ver\":\"\(LanServer.esc(LanServer.osVersion()))\",\"port\":\(LanServer.port),\"ip\":\"\(LanServer.esc(ip))\",\"vpn\":\(Discovery.vpnActive())}"
             respond(conn, "200 OK", "application/json; charset=utf-8", Data(json.utf8))
+
+        case "/api/scan":
+            Discovery.shared.scan { [weak self] in
+                let json = Discovery.shared.peersJson()
+                self?.respond(conn, "200 OK", "application/json; charset=utf-8", Data(json.utf8))
+            }
+            return
 
         case "/api/peers":
             respond(conn, "200 OK", "application/json; charset=utf-8", Data(Discovery.shared.peersJson().utf8))
