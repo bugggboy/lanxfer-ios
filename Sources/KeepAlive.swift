@@ -1,4 +1,5 @@
 import AVFoundation
+import UIKit
 
 /// iOS 后台保活。
 ///
