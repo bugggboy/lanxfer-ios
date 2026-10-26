@@ -2,190 +2,424 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>局域网传输</title>
 <style>
   :root{
-    --bg:#0f1115; --card:#171a21; --line:#262b35; --fg:#e6e9ef;
-    --dim:#8b94a3; --accent:#4c8dff; --ok:#3ecf8e;
+    --bg:#0b0d12; --card:#151922; --card2:#1c222e; --line:#242b38;
+    --fg:#eef2f8; --dim:#8b95a7; --accent:#4c8dff; --accent2:#37d39b;
+    --warn:#f0a33c; --radius:16px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;background:var(--bg);color:var(--fg);
-       font:16px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
-       padding:16px 14px 40px;max-width:720px;margin:0 auto}
-  h1{font-size:17px;margin:0 0 4px;font-weight:600}
-  .sub{color:var(--dim);font-size:13px;margin-bottom:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-        overflow:hidden;margin-bottom:14px}
-  .row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--fg); min-height:100vh;
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    padding:0 0 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:16px 14px 0}
+
+  /* 顶部 */
+  header{display:flex;align-items:center;gap:12px;padding:8px 2px 16px}
+  .logo{width:40px;height:40px;border-radius:12px;flex:0 0 auto;
+        background:linear-gradient(135deg,#4c8dff,#37d39b);
+        display:flex;align-items:center;justify-content:center;font-size:20px}
+  .title{font-size:18px;font-weight:650;letter-spacing:.2px}
+  .subtitle{font-size:12.5px;color:var(--dim);margin-top:2px}
+
+  /* 本机卡片 */
+  .self{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent2);
+       box-shadow:0 0 0 4px rgba(55,211,155,.15);flex:0 0 auto}
+  .self .name{font-weight:600;font-size:15px}
+  .self .meta{font-size:12.5px;color:var(--dim);margin-top:2px}
+
+  /* 主按钮 */
+  .scanbar{display:flex;gap:10px;margin-bottom:16px}
+  button{font:inherit;border:none;cursor:pointer;border-radius:12px}
+  .primary{flex:1;background:var(--accent);color:#fff;font-weight:650;font-size:15px;
+           padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;
+           transition:transform .12s,opacity .12s}
+  .primary:active{transform:scale(.985);opacity:.9}
+  .primary[disabled]{opacity:.6}
+  .ghost{background:var(--card2);color:var(--fg);padding:14px 16px;font-size:14px;font-weight:500}
+  .ghost:active{background:#232b39}
+
+  /* 设备列表 */
+  .sec{font-size:12.5px;color:var(--dim);margin:2px 4px 8px;letter-spacing:.4px}
+  .list{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        overflow:hidden}
+  .row{display:flex;align-items:center;gap:13px;padding:15px 16px;
        border-bottom:1px solid var(--line);cursor:pointer}
   .row:last-child{border-bottom:none}
-  .row:active{background:#1e222b}
-  .row .ico{width:26px;text-align:center;font-size:18px}
-  .row .main{flex:1;min-width:0}
-  .row .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .row .meta{color:var(--dim);font-size:12px;margin-top:2px}
-  .row .go{color:var(--dim);font-size:13px}
-  .badge{font-size:11px;color:#0f1115;background:var(--ok);border-radius:6px;
-         padding:1px 6px;margin-left:6px;font-weight:600}
-  .badge.self{background:var(--accent)}
-  .empty{color:var(--dim);font-size:14px;padding:16px;text-align:center}
-  .bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
-  .path{flex:1;font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;
-        white-space:nowrap;direction:rtl;text-align:left}
-  button{border:none;border-radius:10px;padding:9px 14px;font-size:14px;
-         background:var(--accent);color:#fff;font-weight:600}
-  button.ghost{background:#232936;color:var(--fg);font-weight:500}
-  .up{display:flex;gap:8px;padding:12px 16px}
-  input[type=text]{flex:1;background:#0f1115;border:1px solid var(--line);border-radius:10px;
-                   padding:10px 12px;color:var(--fg);font-size:14px;min-width:0}
-  .hidden{display:none}
-  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
-         background:#232936;color:#fff;padding:10px 16px;border-radius:10px;
-         font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
-  #toast.show{opacity:1}
+  .row:active{background:var(--card2)}
+  .ava{width:40px;height:40px;border-radius:12px;flex:0 0 auto;display:flex;
+       align-items:center;justify-content:center;font-size:20px;background:#202634}
+  .grow{flex:1;min-width:0}
+  .nm{font-size:15px;font-weight:560;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mt{font-size:12.5px;color:var(--dim);margin-top:2px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chev{color:#4b5464;font-size:18px;flex:0 0 auto}
+  .empty{padding:34px 20px;text-align:center;color:var(--dim);font-size:14px;line-height:1.7}
+
+  .warn{background:rgba(240,163,60,.12);border:1px solid rgba(240,163,60,.35);
+        border-radius:12px;color:#f5c27b;font-size:13px;padding:12px 14px;margin-bottom:14px;line-height:1.6}
+  .manual{text-align:center;margin-top:14px}
+  .manual a{color:var(--dim);font-size:13px;text-decoration:none}
+  #manualBox{display:flex;gap:8px;margin-top:10px}
+  #manualBox input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:11px;
+                   padding:11px 12px;color:var(--fg);font-size:14px;min-width:0}
+  #manualBox button{flex:0 0 auto}
+
+  /* 文件浏览 */
+  .crumbs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+  .crumbs::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;background:var(--card2);border:1px solid var(--line);
+        border-radius:9px;padding:6px 11px;font-size:12.5px;color:var(--dim)}
+  .chip.on{background:rgba(76,141,255,.16);border-color:rgba(76,141,255,.5);color:#cfe0ff}
+  .fe{display:flex;align-items:center;gap:12px;padding:13px 16px;
+      border-bottom:1px solid var(--line);cursor:pointer}
+  .fe:last-child{border-bottom:none}
+  .fe:active{background:var(--card2)}
+  .fe .ico{width:34px;height:34px;border-radius:10px;background:#202634;flex:0 0 auto;
+           display:flex;align-items:center;justify-content:center;font-size:17px}
+  .fe .fn{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fe .fm{font-size:12px;color:var(--dim);margin-top:1px}
+  .target{display:flex;align-items:center;gap:10px;padding:12px 16px;
+          background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+          margin-bottom:12px}
+  .target .nm2{font-size:14.5px;font-weight:600}
+  .target .ip{font-size:12px;color:var(--dim)}
+
+  /* 底部操作条 */
+  .dock{position:fixed;left:0;right:0;bottom:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+        background:linear-gradient(180deg,rgba(11,13,18,0),rgba(11,13,18,.96) 32%);}
+  .dockin{max-width:760px;margin:0 auto;display:flex;gap:10px}
+  .dock button{flex:1}
+  .up{background:var(--accent2);color:#07130e;font-weight:650;font-size:15px;padding:14px}
+  .up:active{opacity:.9}
+
+  .spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);
+        border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .hidden{display:none!important}
+
+  #toast{position:fixed;left:50%;bottom:auto;top:18px;transform:translate(-50%,-14px);
+         background:#202634;border:1px solid var(--line);color:#fff;padding:10px 16px;
+         border-radius:11px;font-size:13.5px;opacity:0;transition:.22s;pointer-events:none;z-index:99}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
 
-<h1>局域网传输</h1>
-<div class="sub" id="self">正在读取本机信息…</div>
-
-<!-- 设备列表 -->
-<div id="viewDevices">
-  <div class="card" id="peerList">
-    <div class="empty">正在搜索同一局域网内的设备…</div>
-  </div>
-  <div class="card">
-    <div class="bar"><div class="path">mDNS 搜不到？手动添加对方 IP</div></div>
-    <div class="up">
-      <input type="text" id="manual" placeholder="192.168.31.101 或 ip:8765">
-      <button class="ghost" onclick="addManual()">添加</button>
+<div class="wrap">
+  <header>
+    <div class="logo">⇄</div>
+    <div>
+      <div class="title">局域网传输</div>
+      <div class="subtitle" id="selfLine">读取本机信息…</div>
     </div>
+  </header>
+
+  <!-- 设备列表视图 -->
+  <div id="viewDevices">
+    <div class="self">
+      <div class="dot"></div>
+      <div class="grow">
+        <div class="name" id="selfName">本机</div>
+        <div class="meta" id="selfMeta">服务运行中</div>
+      </div>
+    </div>
+
+    <div class="warn hidden" id="vpnWarn">
+      ⚠️ 检测到 VPN 正在运行，可能搜不到局域网设备。<br>
+      请在 VPN 里开启「绕过局域网/私有网段」，或暂时关闭后重试。
+    </div>
+
+    <div class="scanbar">
+      <button class="primary" id="scanBtn" onclick="scan()">
+        <span id="scanIcon">🔍</span><span id="scanText">搜索附近设备</span>
+      </button>
+    </div>
+
+    <div class="sec" id="listTitle">附近设备</div>
+    <div class="list" id="peerList">
+      <div class="empty">点上方按钮搜索<br><span style="font-size:12.5px">对方也要打开本应用并在同一 WiFi</span></div>
+    </div>
+
+    <div class="manual">
+      <a href="#" onclick="toggleManual(event)">找不到？手动连接</a>
+      <div class="hidden" id="manualBox">
+        <input type="text" id="manualIp" placeholder="例如 192.168.31.101">
+        <button class="ghost" onclick="addManual()">连接</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文件浏览视图 -->
+  <div id="viewFiles" class="hidden">
+    <div class="target">
+      <div class="ava" id="tgAva">📱</div>
+      <div class="grow">
+        <div class="nm2" id="tgName">设备</div>
+        <div class="ip" id="tgIp">—</div>
+      </div>
+      <button class="ghost" style="padding:9px 13px;font-size:13px" onclick="backToDevices()">返回</button>
+    </div>
+    <div class="crumbs" id="crumbs"></div>
+    <div class="list" id="fileList"><div class="empty">加载中…</div></div>
   </div>
 </div>
 
-<!-- 文件浏览 -->
-<div id="viewFiles" class="hidden">
-  <div class="card">
-    <div class="bar">
-      <button class="ghost" onclick="backToDevices()">‹ 设备</button>
-      <div class="path" id="curPath">/</div>
-      <button class="ghost" onclick="goUp()">上一级</button>
-    </div>
-    <div id="fileList"><div class="empty">加载中…</div></div>
-    <div class="up">
-      <input type="file" id="fileInput" multiple style="display:none" onchange="upload(this)">
-      <button onclick="document.getElementById('fileInput').click()">上传到这里</button>
-      <button class="ghost" onclick="refresh()">刷新</button>
-    </div>
+<div class="dock">
+  <div class="dockin" id="dockDevices">
+    <button class="ghost" onclick="scan()">重新搜索</button>
+    <button class="ghost" onclick="openSelf()">浏览本机文件</button>
+  </div>
+  <div class="dockin hidden" id="dockFiles">
+    <input type="file" id="fileInput" multiple style="display:none" onchange="upload(this)">
+    <button class="up" onclick="document.getElementById('fileInput').click()">上传到当前目录</button>
+    <button class="ghost" onclick="goUp()">上一级</button>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-let peer = null;          // 当前浏览的设备；null 表示本机
-let path = '/sdcard';
+let peer = null;              // null = 本机
+let path = '';
+let scanning = false;
+const LS_KEY = 'lanxfer.devices';
 
 const $ = id => document.getElementById(id);
-function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
-function base(){ return peer ? `http://${peer.host}:${peer.port}` : ''; }
-function fmt(n){ if(!n) return ''; const u=['B','KB','MB','GB']; let i=0;
-  while(n>=1024 && i<u.length-1){n/=1024;i++;} return n.toFixed(n<10&&i>0?1:0)+' '+u[i]; }
-function esc(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => {
+  if(!n) return '0 B';
+  const u = ['B','KB','MB','GB','TB']; let i = 0;
+  while(n >= 1024 && i < u.length-1){ n /= 1024; i++; }
+  return (i === 0 ? n : n.toFixed(n < 10 ? 1 : 0)) + ' ' + u[i];
+};
+const base = () => peer ? `http://${peer.host}:${peer.port}` : '';
 
-async function loadSelf(){
-  try{
-    const r = await fetch('/api/info'); const j = await r.json();
-    $('self').innerHTML = `本机：<b style="color:#e6e9ef">${esc(j.model)}</b> · ${esc(j.ver)} · 端口 ${j.port}`;
-  }catch(e){ $('self').textContent = '本机信息读取失败'; }
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-async function pollPeers(){
-  if(!$('viewDevices').classList.contains('hidden')){
-    try{
-      const r = await fetch('/api/peers'); const list = await r.json();
-      renderPeers(list);
-    }catch(e){}
+/* ---------- 本机信息 ---------- */
+async function loadSelf(){
+  try{
+    const j = await (await fetch('/api/info')).json();
+    $('selfName').textContent = j.model;
+    $('selfMeta').textContent = `${j.ver} · ${j.ip || location.hostname}:${j.port}`;
+    $('selfLine').textContent = '服务运行中';
+    if(j.vpn){ $('vpnWarn').classList.remove('hidden'); }
+  }catch(e){
+    $('selfLine').textContent = '本机服务异常';
   }
-  setTimeout(pollPeers, 2000);
+}
+
+function toggleManual(e){ e.preventDefault(); $('manualBox').classList.toggle('hidden'); }
+function addManual(){
+  const v = $('manualIp').value.trim();
+  if(!v) return;
+  fetch('/api/addpeer?host=' + encodeURIComponent(v)).then(async () => {
+    $('manualIp').value = '';
+    $('manualBox').classList.add('hidden');
+    toast('已添加，稍候刷新列表');
+    setTimeout(poll, 300);
+  });
+}
+
+/* ---------- 搜索 ---------- */
+async function scan(){
+  if(scanning) return;
+  scanning = true;
+  $('scanBtn').disabled = true;
+  $('scanIcon').innerHTML = '<span class="spin"></span>';
+  $('scanText').textContent = '正在搜索…';
+  $('peerList').innerHTML = '<div class="empty">正在扫描局域网…<br><span style="font-size:12.5px">约需 3 秒</span></div>';
+  try{
+    const r = await fetch('/api/scan', {method:'POST'});
+    const list = await r.json();
+    renderPeers(list);
+    remember(list);
+    if(!list.length) toast('没有找到设备');
+  }catch(e){
+    $('peerList').innerHTML = '<div class="empty">搜索失败，请确认在同一个 WiFi</div>';
+  }finally{
+    scanning = false;
+    $('scanBtn').disabled = false;
+    $('scanIcon').textContent = '🔍';
+    $('scanText').textContent = '重新搜索';
+  }
+}
+
+function remember(list){
+  try{
+    const old = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+    const map = {};
+    [...old, ...list].forEach(p => map[p.host + ':' + p.port] = p);
+    localStorage.setItem(LS_KEY, JSON.stringify(Object.values(map).slice(-12)));
+  }catch(e){}
 }
 
 function renderPeers(list){
   const box = $('peerList');
-  if(!list.length){ box.innerHTML = '<div class="empty">正在搜索同一局域网内的设备…<br>（对方也要打开本工具）</div>'; return; }
-  box.innerHTML = list.map(p=>`
-    <div class="row" onclick='openPeer(${JSON.stringify(p)})'>
-      <div class="ico">${p.os==='ios' ? '📱' : '🤖'}</div>
-      <div class="main">
-        <div class="nm">${esc(p.name||p.host)}</div>
-        <div class="meta">${esc(p.host)}:${p.port}${p.os?' · '+esc(p.os):''}</div>
+  $('listTitle').textContent = list.length ? `附近设备 · ${list.length}` : '附近设备';
+  if(!list.length){
+    box.innerHTML = '<div class="empty">没有找到设备<br><span style="font-size:12.5px">确认对方已打开本应用且在同一 WiFi</span></div>';
+    return;
+  }
+  box.innerHTML = list.map((p, i) => `
+    <div class="row" onclick='openPeer(${JSON.stringify(p).replace(/'/g, "&apos;")})'>
+      <div class="ava">${p.os === 'ios' ? '📱' : '🤖'}</div>
+      <div class="grow">
+        <div class="nm">${esc(p.name || p.host)}</div>
+        <div class="mt">${esc(p.host)}:${p.port}${p.os ? ' · ' + esc(p.os) : ''}</div>
       </div>
-      <div class="go">浏览 ›</div>
+      <div class="chev">›</div>
     </div>`).join('');
 }
 
-function addManual(){
-  const h = $('manual').value.trim();
-  if(!h) return;
-  fetch('/api/addpeer?host='+encodeURIComponent(h)).then(()=>{ $('manual').value=''; toast('已添加'); });
+/* ---------- 进入设备 ---------- */
+function openPeer(p){
+  peer = p;
+  $('tgAva').textContent = p.os === 'ios' ? '📱' : '🤖';
+  $('tgName').textContent = p.name || p.host;
+  $('tgIp').textContent = `${p.host}:${p.port}`;
+  showFiles();
+  path = '';
+  refresh(true);
 }
 
-function openPeer(p){ peer = p; path = '/sdcard'; $('viewDevices').classList.add('hidden');
-  $('viewFiles').classList.remove('hidden'); refresh(); }
-function backToDevices(){ peer=null; $('viewFiles').classList.add('hidden');
-  $('viewDevices').classList.remove('hidden'); }
-function goUp(){ if(path==='/') return; path = path.replace(/\/[^\/]+\/?$/,'') || '/'; refresh(); }
+function openSelf(){
+  peer = null;
+  $('tgAva').textContent = '📱';
+  $('tgName').textContent = $('selfName').textContent + '（本机）';
+  $('tgIp').textContent = location.hostname;
+  showFiles();
+  path = '';
+  refresh(true);
+}
 
-async function refresh(){
-  $('curPath').textContent = path;
+function showFiles(){
+  $('viewDevices').classList.add('hidden');
+  $('viewFiles').classList.remove('hidden');
+  $('dockDevices').classList.add('hidden');
+  $('dockFiles').classList.remove('hidden');
+}
+
+function backToDevices(){
+  peer = null;
+  $('viewFiles').classList.add('hidden');
+  $('viewDevices').classList.remove('hidden');
+  $('dockFiles').classList.add('hidden');
+  $('dockDevices').classList.remove('hidden');
+}
+
+function goUp(){
+  if(!path) return;
+  const parts = path.split('/').filter(Boolean);
+  parts.pop();
+  path = '/' + parts.join('/');
+  refresh();
+}
+
+/* ---------- 文件列表 ---------- */
+async function refresh(first){
   $('fileList').innerHTML = '<div class="empty">加载中…</div>';
   try{
-    const r = await fetch(`${base()}/api/ls?path=${encodeURIComponent(path)}`);
-    const j = await r.json();
+    const q = path ? `?path=${encodeURIComponent(path)}` : '';
+    const j = await (await fetch(`${base()}/api/ls${q}`)).json();
     if(j.error){ $('fileList').innerHTML = `<div class="empty">打不开：${esc(j.error)}</div>`; return; }
     path = j.path;
-    $('curPath').textContent = path;
-    if(!j.entries.length){ $('fileList').innerHTML = '<div class="empty">空目录</div>'; return; }
-    $('fileList').innerHTML = j.entries.map(e=>`
-      <div class="row" onclick="tapEntry('${esc(e.n).replace(/'/g,"\\'")}',${e.d})">
-        <div class="ico">${e.d?'📁':'📄'}</div>
-        <div class="main"><div class="nm">${esc(e.n)}</div>
-          <div class="meta">${e.d?'文件夹':fmt(e.s)}</div></div>
-        <div class="go">${e.d?'›':'下载'}</div>
-      </div>`).join('');
+    renderCrumbs(path);
+    renderFiles(j.entries);
   }catch(e){
-    $('fileList').innerHTML = '<div class="empty">连接失败，对方可能已关闭工具</div>';
+    $('fileList').innerHTML = '<div class="empty">连接失败<br><span style="font-size:12.5px">对方可能已关闭应用</span></div>';
   }
 }
 
-function tapEntry(name, isDir){
+function renderCrumbs(p){
+  const parts = p.split('/').filter(Boolean);
+  let acc = '';
+  const chips = ['<div class="chip" onclick="jump(\'/\')">根目录</div>'];
+  parts.forEach((seg, i) => {
+    acc += '/' + seg;
+    const last = i === parts.length - 1;
+    chips.push(`<div class="chip ${last ? 'on' : ''}" onclick="jump('${acc.replace(/'/g, "\\'")}')">${esc(seg)}</div>`);
+  });
+  $('crumbs').innerHTML = chips.join('');
+  $('crumbs').scrollLeft = 9999;
+}
+
+function jump(p){ path = p; refresh(); }
+
+function renderFiles(entries){
+  if(!entries.length){ $('fileList').innerHTML = '<div class="empty">这个目录是空的</div>'; return; }
+  $('fileList').innerHTML = entries.map(e => {
+    const icon = e.d ? '📁' : fileIcon(e.n);
+    const meta = e.d ? '文件夹' : fmt(e.s);
+    return `<div class="fe" onclick="tapEnt('${esc(e.n).replace(/'/g, "\\'")}',${e.d})">
+      <div class="ico">${icon}</div>
+      <div class="grow">
+        <div class="fn">${esc(e.n)}</div>
+        <div class="fm">${meta}</div>
+      </div>
+      <div class="chev">${e.d ? '›' : '↓'}</div>
+    </div>`;
+  }).join('');
+}
+
+function fileIcon(name){
+  const x = (name.split('.').pop() || '').toLowerCase();
+  if(['jpg','jpeg','png','gif','webp','heic'].includes(x)) return '🖼';
+  if(['mp4','mov','mkv','avi','webm'].includes(x)) return '🎬';
+  if(['mp3','m4a','flac','wav','aac'].includes(x)) return '🎵';
+  if(['zip','rar','7z','tar','gz'].includes(x)) return '🗜';
+  if(['pdf'].includes(x)) return '📕';
+  if(['apk','ipa'].includes(x)) return '📦';
+  if(['txt','md','log','json','xml'].includes(x)) return '📄';
+  return '📄';
+}
+
+function tapEnt(name, isDir){
   const full = (path.endsWith('/') ? path : path + '/') + name;
   if(isDir){ path = full; refresh(); return; }
-  // 下载：交给系统下载器（WebView 侧已注册 DownloadListener）
   window.location.href = `${base()}/api/get?path=${encodeURIComponent(full)}`;
   toast('开始下载 ' + name);
 }
 
+/* ---------- 上传 ---------- */
 async function upload(input){
   const files = [...input.files];
   input.value = '';
   for(const f of files){
     const dst = (path.endsWith('/') ? path : path + '/') + f.name;
-    toast(`上传 ${f.name}…`);
+    toast(`上传 ${f.name}（${fmt(f.size)}）…`);
     try{
-      const r = await fetch(`${base()}/api/put?path=${encodeURIComponent(dst)}`,
-                            {method:'PUT', body:f});
+      const r = await fetch(`${base()}/api/put?path=${encodeURIComponent(dst)}`, {method:'PUT', body:f});
       const j = await r.json();
-      toast(j.ok ? `已上传 ${f.name} (${fmt(j.size)})` : `上传失败 ${f.name}`);
-    }catch(e){ toast('上传失败：' + e); }
+      toast(j.ok ? `已上传 ${f.name}` : `上传失败 ${f.name}`);
+    }catch(e){ toast('上传失败：网络中断'); }
   }
   refresh();
 }
 
-loadSelf(); pollPeers();
+/* ---------- 轮询（被动刷新列表） ---------- */
+async function poll(){
+  if($('viewDevices').classList.contains('hidden')){ return; }
+  try{
+    const list = await (await fetch('/api/peers')).json();
+    if(list.length) renderPeers(list);
+  }catch(e){}
+}
+setInterval(poll, 3000);
+
+loadSelf();
 </script>
 </body>
 </html>
